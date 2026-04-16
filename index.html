@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Delaware Memorial Bridge — BDI Analysis Package</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background: #0d1117; color: #c9d1d9; }
+
+  /* ── Password Gate ── */
+  #gate {
+    display: flex; align-items: center; justify-content: center; min-height: 100vh;
+    background: linear-gradient(135deg, #0d1117 0%, #161b22 100%);
+  }
+  .gate-box {
+    background: #161b22; border: 1px solid #30363d; border-radius: 12px;
+    padding: 48px 40px; text-align: center; max-width: 420px; width: 90%;
+    box-shadow: 0 16px 48px rgba(0,0,0,0.4);
+  }
+  .gate-box h1 { font-size: 18px; color: #e6edf3; margin-bottom: 6px; }
+  .gate-box p { font-size: 13px; color: #8b949e; margin-bottom: 24px; }
+  .gate-box .logo { font-size: 32px; margin-bottom: 16px; color: #58a6ff; }
+  .gate-input {
+    width: 100%; padding: 12px 16px; border-radius: 8px; border: 1px solid #30363d;
+    background: #0d1117; color: #e6edf3; font-size: 14px; outline: none; margin-bottom: 12px;
+  }
+  .gate-input:focus { border-color: #58a6ff; box-shadow: 0 0 0 3px rgba(88,166,255,0.15); }
+  .gate-btn {
+    width: 100%; padding: 12px; border-radius: 8px; border: none;
+    background: #238636; color: #fff; font-size: 14px; font-weight: 600;
+    cursor: pointer; transition: background 0.2s;
+  }
+  .gate-btn:hover { background: #2ea043; }
+  .gate-error { color: #f85149; font-size: 12px; margin-top: 8px; display: none; }
+  .gate-hint { font-size: 11px; color: #484f58; margin-top: 16px; }
+
+  /* ── Main Content ── */
+  #content { display: none; background: #f8f9fa; color: #1a1a2e; }
+
+  /* Tab bar */
+  .tab-bar {
+    position: sticky; top: 0; z-index: 100;
+    background: #1a1a2e; display: flex; justify-content: center; gap: 0;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15); padding: 0;
+  }
+  .tab-btn {
+    background: none; border: none; color: #adb5bd; padding: 14px 24px;
+    font-size: 13px; font-weight: 600; cursor: pointer; border-bottom: 3px solid transparent;
+    transition: all 0.2s; white-space: nowrap;
+  }
+  .tab-btn:hover { color: #fff; background: rgba(255,255,255,0.05); }
+  .tab-btn.active { color: #fff; border-bottom-color: #58a6ff; }
+  .tab-panel { display: none; padding: 20px; }
+  .tab-panel.active { display: block; }
+
+  /* Shared dashboard styles */
+  .header { text-align: center; margin-bottom: 24px; }
+  .header h1 { font-size: 20px; font-weight: 700; color: #1a1a2e; margin-bottom: 4px; }
+  .header h2 { font-size: 13px; font-weight: 400; color: #666; }
+  .header .subtitle { font-size: 12px; color: #999; margin-top: 4px; }
+  .section { background: #fff; border-radius: 12px; padding: 20px; box-shadow: 0 1px 4px rgba(0,0,0,0.08); margin-bottom: 20px; max-width: 1150px; margin-left: auto; margin-right: auto; }
+  .section-title, .stitle { font-size: 15px; font-weight: 700; margin-bottom: 4px; }
+  .section-sub, .ssub { font-size: 11px; color: #888; margin-bottom: 14px; }
+  .chart-container { background: #fff; border-radius: 12px; padding: 24px; box-shadow: 0 1px 4px rgba(0,0,0,0.08); margin-bottom: 24px; max-width: 1100px; margin-left: auto; margin-right: auto; }
+  .chart-title { font-size: 15px; font-weight: 600; margin-bottom: 4px; }
+  .chart-subtitle { font-size: 11px; color: #999; margin-bottom: 16px; }
+  canvas { max-height: 420px; }
+  table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  th { background: #1a1a2e; color: #fff; padding: 8px 10px; text-align: center; font-weight: 600; font-size: 11px; }
+  td { padding: 7px 10px; text-align: center; border-bottom: 1px solid #eee; color: #1a1a2e; }
+  tr:hover td { background: #f0f4ff; }
+  .kpi-row { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-bottom: 20px; }
+  .kpi { background: #fff; border-radius: 10px; padding: 12px 20px; text-align: center; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+  .kpi .value, .kpi .val, .kpi .v { font-size: 24px; font-weight: 700; }
+  .kpi .label, .kpi .lbl, .kpi .l { font-size: 10px; color: #888; text-transform: uppercase; letter-spacing: 0.4px; }
+  .callout { background: #fff8e1; border-left: 4px solid #ffa000; padding: 12px 16px; border-radius: 6px; margin: 14px auto; font-size: 12px; line-height: 1.6; max-width: 1150px; }
+  .callout strong { color: #e65100; }
+  .callout.red { background: #fce4ec; border-left-color: #e63946; }
+  .callout.red strong { color: #b71c1c; }
+  .note { font-size: 11px; color: #888; margin-top: 8px; line-height: 1.5; }
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; max-width: 1150px; margin: 0 auto; }
+  @media (max-width: 800px) { .two-col { grid-template-columns: 1fr; } .tab-btn { padding: 10px 12px; font-size: 11px; } }
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 10px; font-weight: 700; color: #fff; }
+  .badge-high { background: #e63946; }
+  .badge-med { background: #e76f51; }
+  .badge-low { background: #2d6a4f; }
+  .tag { display: inline-block; font-size: 9px; padding: 1px 6px; border-radius: 8px; font-weight: 600; }
+  .tag-vib { background: #ede7f6; color: #7b2cbf; }
+  .tag-disp { background: #e3f2fd; color: #1565c0; }
+  .highlight { background: #fff3f3 !important; font-weight: 600; color: #e63946; }
+  .spec-badge { display: inline-block; background: #e63946; color: #fff; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 10px; }
+  .sev-3{background:#ffcdd2;color:#b71c1c;font-weight:700}
+  .sev-2{background:#ffe0b2;color:#e65100;font-weight:600}
+  .sev-1{background:#fff9c4;color:#f57f17}
+  .sev-0{background:#c8e6c9;color:#1b5e20;font-weight:600}
+  .sev-na{background:#e0e0e0;color:#616161}
+  .verdict{background:#263238;color:#fff;border-radius:10px;padding:18px;max-width:1150px;margin:0 auto 16px;font-size:13px;line-height:1.7}
+  .verdict h3{color:#ffab00;font-size:15px;margin-bottom:8px}
+  .footer { text-align: center; font-size: 10px; color: #bbb; margin-top: 24px; padding-bottom: 20px; }
+  .confidential-bar { background: #e63946; color: #fff; text-align: center; font-size: 11px; font-weight: 600; padding: 6px; letter-spacing: 1px; }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════ PASSWORD GATE ═══════════════════ -->
+<div id="gate">
+  <div class="gate-box">
+    <div class="logo">&#9878;</div>
+    <h1>Delaware Memorial Bridge</h1>
+    <p>BDI Technical Analysis Package — Confidential</p>
+    <input type="password" id="pwInput" class="gate-input" placeholder="Enter access code" autocomplete="off" />
+    <button class="gate-btn" id="pwBtn">Access Analysis</button>
+    <div class="gate-error" id="pwErr">Incorrect access code. Please try again.</div>
+    <div class="gate-hint">Contact the project lead for access credentials.</div>
+  </div>
+</div>
+
+<!-- ═══════════════════ PROTECTED CONTENT ═══════════════════ -->
+<div id="content">
+  <div class="confidential-bar">CONFIDENTIAL — CONTRACT BRC231F — DO NOT DISTRIBUTE</div>
+
+  <nav class="tab-bar">
+    <button class="tab-btn active" data-tab="tab1">1. Vertical Displacement</button>
+    <button class="tab-btn" data-tab="tab2">2. Vibration vs. Displacement</button>
+    <button class="tab-btn" data-tab="tab3">3. Damage Correlation</button>
+  </nav>
+
+  <!-- ═══════════════ TAB 1 — VERTICAL DISPLACEMENT ═══════════════ -->
+  <div id="tab1" class="tab-panel active">
+    <div class="header">
+      <h1>BDI Vertical Displacement Monitoring</h1>
+      <h2>Contract BRC231F | 18 Expansion Joints | Oct 25 – Nov 22, 2023</h2>
+      <div class="subtitle">Commissioned by mageba North America Corp. | BDI (Bridge Diagnostics Inc.), Louisville CO | LVDT sensors at 200 Hz, 1-min interval summaries</div>
+    </div>
+    <div class="kpi-row">
+      <div class="kpi" style="--c:#e63946"><div class="value" style="color:#e63946">0.382"</div><div class="label">Max Total Movement (9.70 mm)</div></div>
+      <div class="kpi"><div class="value" style="color:#e76f51">0.228"</div><div class="label">Avg Right Lane (5.79 mm)</div></div>
+      <div class="kpi"><div class="value" style="color:#2a6f97">0.093"</div><div class="label">Avg Left Lane (2.36 mm)</div></div>
+      <div class="kpi"><div class="value" style="color:#2d6a4f">0.375"</div><div class="label">Spec Limit +/- 3/8" (9.53 mm)</div></div>
+    </div>
+    <div class="chart-container">
+      <div class="chart-title">Total Vertical Movement by Joint — Left Lane vs. Right Lane</div>
+      <div class="chart-subtitle">Bars show peak-to-peak displacement (max - min) incl. temperature response. Red dashed line = spec limit of 0.375" (9.53 mm). Only 2 of 4 lanes open during monitoring.</div>
+      <canvas id="chart1_main"></canvas>
+      <div class="note">Note: Right Lane consistently shows 2-4x higher displacement than Left Lane, confirming cross-girder deflection as the primary movement source (per Dr. Hoffmann, mageba).</div>
+    </div>
+    <div class="section">
+      <div class="section-title">Complete Data Table — Total Joint Movement Including Temperature Response</div>
+      <table>
+        <thead>
+          <tr><th>Joint</th><th>Report Date</th><th>Left Lane (in)</th><th>Left Lane (mm)</th><th>Right Lane (in)</th><th>Right Lane (mm)</th><th>Max (in)</th><th>Max (mm)</th><th>vs. Spec</th></tr>
+        </thead>
+        <tbody id="tab1Table"></tbody>
+      </table>
+      <div class="note" style="margin-top:12px;">
+        <strong>Key findings (Dr. Simon Hoffmann, mageba Services & Technology, 30.11.2023):</strong><br>
+        — Typical 1-minute amplitude: 0.05-0.15 in (1.27-3.81 mm). Single peaks exceed 0.20 in (5.08 mm).<br>
+        — Movement is continuous and not limited to high-traffic periods.<br>
+        — Tensa Polyflex RapidCure is "neither designed nor qualified for such continuous vertical movements with high number of cycles."<br>
+        — Measurements taken with only 2 of 4 lanes open — actual movements will be higher at full traffic load.<br>
+        — Project spec assumed only ONE vertical +/- 3/8" movement over the lifespan of the joints.
+      </div>
+    </div>
+    <div class="footer">Source: BDI Testing Summaries (John Prader, PhD, PE) & mageba displacement analysis (Dr. Simon Hoffmann) | Contract BRC231F</div>
+  </div>
+
+  <!-- ═══════════════ TAB 2 — VIBRATION vs. DISPLACEMENT ═══════════════ -->
+  <div id="tab2" class="tab-panel">
+    <div class="header">
+      <h1>BDI Studies Overlay — Delaware Memorial Bridge</h1>
+      <h2><span class="tag tag-vib">VIBRATION Jun 2022</span> Peak Particle Velocity (PPV) &nbsp;&nbsp;vs.&nbsp;&nbsp; <span class="tag tag-disp">DISPLACEMENT Oct-Nov 2023</span> Joint Vertical Movement</h2>
+    </div>
+    <div class="callout">
+      <strong>Important methodological note:</strong> These two studies measure <em>different physical quantities</em>. The 2022 study records <strong>Peak Particle Velocity (PPV)</strong> in in/s at span midpoints — a vibration intensity metric. The 2023 study records <strong>peak-to-peak vertical displacement</strong> in inches at expansion joints — a deflection metric. They cannot be directly overlaid on the same axis. However, they share 4 overlapping span zones, and the <strong>pattern of which zones are most affected is highly consistent</strong> across both studies.
+    </div>
+    <div class="kpi-row">
+      <div class="kpi"><div class="val" style="color:#7b2cbf">4 of 4</div><div class="lbl">Span zones overlap between studies</div></div>
+      <div class="kpi"><div class="val" style="color:#2a6f97">Girder Span</div><div class="lbl">Highest in BOTH studies</div></div>
+      <div class="kpi"><div class="val" style="color:#e63946">Consistent</div><div class="lbl">Rank order matches across studies</div></div>
+    </div>
+    <div class="section">
+      <div class="section-title">Sensor Location Cross-Reference</div>
+      <div class="section-sub">Mapping vibration sensors (2022) to displacement joints (2023) by structural zone</div>
+      <table>
+        <thead><tr><th>Span Zone</th><th>Vibration Sensors (Jun 2022)</th><th>Displacement Joints (Oct-Nov 2023)</th><th>Overlap?</th></tr></thead>
+        <tbody>
+          <tr><td style="font-weight:600">Girder Span<br><span style="font-size:10px;color:#888">(W. piers 1W24-1W5)</span></td><td>UM7227 (South Side)<br>UM7493 (FB Pier 8 & 9)</td><td>1W13, 1W16, 1W19, 1W22</td><td><span class="badge badge-high">YES — Same zone</span></td></tr>
+          <tr><td style="font-weight:600">Truss Span<br><span style="font-size:10px;color:#888">(1W5 to W. Anchorage)</span></td><td>UM7275 (FB at PP01)<br>UM6429 (FB at PP03)</td><td>1W4, 1W5</td><td><span class="badge badge-high">YES — Same zone</span></td></tr>
+          <tr><td style="font-weight:600">Side Span<br><span style="font-size:10px;color:#888">(near tower)</span></td><td>UM8002 (Center)<br>UM8466 (South)</td><td>1W1, 1W2, 1W3, W. Abut.</td><td><span class="badge badge-med">YES — Adjacent</span></td></tr>
+          <tr><td style="font-weight:600">Main Span<br><span style="font-size:10px;color:#888">(suspended)</span></td><td>UM10471 (Center)<br>UM6065 (South)</td><td>1E1-1E5, 1E12, 1E15, E. Abut.</td><td><span class="badge badge-med">YES — Adjacent</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="two-col">
+      <div class="section">
+        <div class="section-title"><span class="tag tag-vib">2022</span> Mean Vertical PPV by Span (in/s)</div>
+        <div class="section-sub">Typ. Mon-Fri Daytime — higher value = more vibration energy</div>
+        <canvas id="chart2_ppv"></canvas>
+      </div>
+      <div class="section">
+        <div class="section-title"><span class="tag tag-disp">2023</span> Max Vertical Displacement by Span Zone (in / mm)</div>
+        <div class="section-sub">Right Lane — higher value = more deflection at joint</div>
+        <canvas id="chart2_disp"></canvas>
+      </div>
+    </div>
+    <div class="section">
+      <div class="section-title">Normalized Comparison — Both Studies Ranked by Span Zone</div>
+      <div class="section-sub">Each metric normalized to its own maximum (100%) to show relative severity ranking across span zones.</div>
+      <canvas id="chart2_norm"></canvas>
+    </div>
+    <div class="section">
+      <div class="section-title">Detailed Comparison by Span Zone</div>
+      <table>
+        <thead>
+          <tr><th rowspan="2">Span Zone</th><th colspan="3" style="background:#7b2cbf">Vibration PPV (in/s) — Jun 2022</th><th colspan="4" style="background:#1565c0">Joint Displacement (in) — Oct-Nov 2023</th><th rowspan="2">Match?</th></tr>
+          <tr><th style="background:#9c5cd4">Typ. Mean</th><th style="background:#9c5cd4">Typ. Max</th><th style="background:#9c5cd4">2L/2L Mean</th><th style="background:#4791c9">Best Joint</th><th style="background:#4791c9">Right Lane</th><th style="background:#4791c9">Right (mm)</th><th style="background:#4791c9">Left Lane</th></tr>
+        </thead>
+        <tbody id="tab2CompTable"></tbody>
+      </table>
+      <div class="note" style="margin-top:12px"><strong>Key insight:</strong> The Girder Span (Pier 8-9 zone) registered the highest PPV in 2022 (mean 1.55 in/s, peak 4.78 in/s) AND the highest joint displacement in 2023 (1W16 at 0.382"/9.70 mm). Both independently identified the same critical zone 16 months apart.</div>
+    </div>
+    <div class="callout">
+      <strong>Strategic takeaway:</strong><br>
+      1. UHPC Solutions / DRBA had BDI vibration data <em>since August 2022</em> showing the Girder Span as the most dynamically active zone.<br>
+      2. The 2023 mageba-commissioned displacement study independently confirmed the same zone produces the highest joint movement.<br>
+      3. Both studies confirm <strong>continuous, high-cycle dynamic loading</strong> — exactly the condition that exceeds Tensa Polyflex RapidCure design limits.
+    </div>
+    <div class="footer">Sources: BDI Vibration Monitoring Report V1 (Project 220403-DE, Aug 2022) | BDI Joint Displacement Reports (Nov-Dec 2023) | mageba Assessment (Dr. Hoffmann, Nov 2023)</div>
+  </div>
+
+  <!-- ═══════════════ TAB 3 — DAMAGE CORRELATION ═══════════════ -->
+  <div id="tab3" class="tab-panel">
+    <div class="header">
+      <h1>Three-Layer Correlation: Damage Inspection + Displacement + Vibration</h1>
+      <h2>mageba Phase 1 Relief Joint Inspection (Oct 2023) overlaid with BDI Vibration (Jun 2022) and BDI Displacement (Oct-Nov 2023)</h2>
+    </div>
+    <div class="callout red">
+      <strong>Critical distinction:</strong> The inspection covers 25 <em>relief joints</em> (RC40-H, smaller joints within spans). The displacement study covers 18 <em>expansion joints</em> (larger joints at structural transitions). These are different joint types at different locations — but they share the same structural zones and the same dynamic loading environment. The 2020 PU pilot joints (#17, #26) serve as a natural control group.
+    </div>
+    <div class="kpi-row">
+      <div class="kpi"><div class="v" style="color:#e63946">88%</div><div class="l">RC joints with cracking</div></div>
+      <div class="kpi"><div class="v" style="color:#e76f51">40%</div><div class="l">RC joints: severe damage</div></div>
+      <div class="kpi"><div class="v" style="color:#2d6a4f">0%</div><div class="l">PU pilot joints with cracking</div></div>
+      <div class="kpi"><div class="v" style="color:#2a6f97">YES</div><div class="l">Severity correlates with zone</div></div>
+    </div>
+    <div class="section">
+      <div class="stitle">Relief Joint Damage Map — Ordered by Bridge Position (West to East)</div>
+      <div class="ssub">Damage severity scored: 3=Major separation+cracking entire joint, 2=Some separation+cracking, 1=Minor/small crack, 0=Good (PU pilot), N/A=Cannot inspect.</div>
+      <table>
+        <thead><tr><th>Jt#</th><th>Station</th><th>Structure</th><th>Pier/PP</th><th>Damage Score</th><th>Key Defects</th><th>Material</th><th>Zone PPV (in/s)</th><th>Zone Disp. (in)</th></tr></thead>
+        <tbody id="tab3Heatmap"></tbody>
+      </table>
+    </div>
+    <div class="two-col">
+      <div class="section">
+        <div class="stitle">Average Damage Severity by Structural Zone</div>
+        <div class="ssub">Only RC40-H joints (excluding PU pilots and N/A)</div>
+        <canvas id="chart3_sevZone"></canvas>
+      </div>
+      <div class="section">
+        <div class="stitle">Damage Score vs. Position within Suspended Span</div>
+        <div class="ssub">PP3 (near tower) to PP65 (mid-span). Higher damage near cable transitions.</div>
+        <canvas id="chart3_susp"></canvas>
+      </div>
+    </div>
+    <div class="section">
+      <div class="stitle">Three-Metric Overlay by Structural Zone (Normalized to %)</div>
+      <div class="ssub">Avg damage severity, mean vibration PPV, and max joint displacement — all normalized to their respective maximums</div>
+      <canvas id="chart3_triple"></canvas>
+      <div class="note">The Truss Span shows the strongest correlation: highest damage rate AND high vibration/displacement. The Suspended Span shows high average damage but lower vibration — however, the damage concentrates near tower transitions (PP7, PP15, PP41-49), not uniformly.</div>
+    </div>
+    <div class="verdict">
+      <h3>Correlation Analysis — Verdict</h3>
+      <p><strong>Are they just generally failing, or does movement correlate?</strong></p>
+      <p>The answer is <strong>both</strong>, and the nuance matters:</p>
+      <p>1. <strong>General failure: YES.</strong> 88% of all RC joints show cracking — across every zone. This supports mageba's argument that the RC material is fundamentally unsuitable for this dynamic environment. The 2020 PU pilot joints (#17, #26) in the SAME zones show zero cracking, proving the loading environment is survivable with the right material.</p>
+      <p>2. <strong>Severity correlates with movement: YES.</strong> The worst damage (score 3) clusters in the West Truss Span (joints 11, 14, 15, 18) and at suspended span cable transitions (PP7, PP15, PP41-49). These are zones with higher vibration PPV and/or higher differential movement between panels.</p>
+      <p>3. <strong>The suspended span pattern is the most revealing.</strong> Damage is NOT uniform — it peaks near tower/cable transitions and diminishes at mid-span. This matches the structural mechanics: maximum differential vertical movement between adjacent panels occurs where cable stiffness transitions create abrupt changes in deflection profile.</p>
+    </div>
+    <div class="callout">
+      <strong>What this means strategically:</strong><br>
+      — The RC material fails everywhere (general unsuitability), but it fails <em>faster and worse</em> where movements are highest (correlation).<br>
+      — The PU pilot joints surviving in the same zones is your strongest evidence that this is a material problem, not a "bridge moves too much" problem.<br>
+      — However, challenge this: the PU pilots are only 3 years old (installed 2020). The RC joints are newer (Phase 1, installed during construction). If the PU pilots were performing well at age 3 but the RC joints failed within days/weeks, the comparison still strongly favors PU — but long-term PU durability under these conditions remains unproven.
+    </div>
+    <div class="footer">Sources: mageba Phase 1 Relief Joint Inspection Report MUS100090 (Oct 30, 2023) | BDI Vibration Report 220403-DE (Aug 2022) | BDI Joint Displacement Reports (Nov-Dec 2023)</div>
+  </div>
+
+  <div class="confidential-bar">CONFIDENTIAL — CONTRACT BRC231F — DO NOT DISTRIBUTE</div>
+</div>
+
+<script>
+/* ═══════════════ PASSWORD GATE ═══════════════
+   Change the password hash below to set your access code.
+   Default password: DMB2024
+   To change: update the PASS variable.
+*/
+const PASS = 'DMB2024';
+
+document.getElementById('pwBtn').addEventListener('click', tryAccess);
+document.getElementById('pwInput').addEventListener('keydown', e => { if(e.key==='Enter') tryAccess(); });
+
+function tryAccess() {
+  const v = document.getElementById('pwInput').value;
+  if (v === PASS) {
+    document.getElementById('gate').style.display = 'none';
+    document.getElementById('content').style.display = 'block';
+    initCharts();
+  } else {
+    document.getElementById('pwErr').style.display = 'block';
+    document.getElementById('pwInput').value = '';
+    document.getElementById('pwInput').focus();
+  }
+}
+
+/* ═══════════════ TAB SWITCHING ═══════════════ */
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById(btn.dataset.tab).classList.add('active');
+  });
+});
+
+/* ═══════════════ CHART INITIALIZATION ═══════════════ */
+function initCharts() {
+
+  // ─── TAB 1: Displacement chart ───
+  const dispData = [
+    { joint: "W. Abut.", date: "11/29/2023", left: 0.074, right: 0.101 },
+    { joint: "1W1",      date: "12/06/2023", left: 0.098, right: 0.133 },
+    { joint: "1W2",      date: "11/15/2023", left: 0.070, right: 0.309 },
+    { joint: "1W3",      date: "11/15/2023", left: 0.080, right: 0.285 },
+    { joint: "1W4",      date: "11/10/2023", left: 0.090, right: 0.280 },
+    { joint: "1W5",      date: "11/10/2023", left: 0.130, right: 0.250 },
+    { joint: "1W13",     date: "11/10/2023", left: 0.080, right: 0.284 },
+    { joint: "1W16",     date: "11/10/2023", left: 0.196, right: 0.382 },
+    { joint: "1W19",     date: "11/10/2023", left: 0.127, right: 0.298 },
+    { joint: "1W22",     date: "11/10/2023", left: 0.128, right: 0.289 },
+    { joint: "E. Abut.", date: "11/29/2023", left: 0.075, right: 0.195 },
+    { joint: "1E1",      date: "12/06/2023", left: 0.085, right: 0.139 },
+    { joint: "1E2",      date: "11/22/2023", left: 0.095, right: 0.327 },
+    { joint: "1E3",      date: "11/22/2023", left: 0.083, right: 0.305 },
+    { joint: "1E4",      date: "11/29/2023", left: 0.082, right: 0.141 },
+    { joint: "1E5",      date: "11/29/2023", left: 0.050, right: 0.201 },
+    { joint: "1E12",     date: "11/22/2023", left: 0.056, right: 0.191 },
+    { joint: "1E15",     date: "11/22/2023", left: 0.095, right: 0.136 },
+  ];
+  const specLimit = 0.375;
+  const sorted1 = [...dispData].sort((a,b) => Math.max(b.left,b.right) - Math.max(a.left,a.right));
+
+  new Chart(document.getElementById('chart1_main'), {
+    type: 'bar',
+    data: {
+      labels: sorted1.map(d => d.joint),
+      datasets: [
+        { label: 'Right Lane (in)', data: sorted1.map(d => d.right), backgroundColor: sorted1.map(d => d.right > specLimit ? '#e63946' : '#2a6f97'), borderRadius: 4, barPercentage: 0.7, categoryPercentage: 0.8 },
+        { label: 'Left Lane (in)', data: sorted1.map(d => d.left), backgroundColor: '#90be6d', borderRadius: 4, barPercentage: 0.7, categoryPercentage: 0.8 },
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: true,
+      plugins: { tooltip: { callbacks: { afterLabel: ctx => '= '+(ctx.raw*25.4).toFixed(2)+' mm' } }, legend: { position:'top', labels:{font:{size:12}} } },
+      scales: {
+        y: { beginAtZero:true, max:0.45, title:{display:true,text:'Total Vertical Movement (inches)',font:{size:12}}, ticks:{callback:v=>v.toFixed(2)+'"'}, grid:{color:'#eee'} },
+        y1: { position:'right', beginAtZero:true, max:0.45*25.4, title:{display:true,text:'mm',font:{size:12}}, ticks:{callback:v=>v.toFixed(1)+' mm'}, grid:{drawOnChartArea:false} },
+        x: { ticks:{font:{size:11}}, grid:{display:false} }
+      }
+    },
+    plugins: [{
+      id:'specLine1', afterDraw(chart) {
+        const y=chart.scales.y.getPixelForValue(specLimit), ctx=chart.ctx;
+        ctx.save(); ctx.setLineDash([6,4]); ctx.strokeStyle='#e63946'; ctx.lineWidth=2;
+        ctx.beginPath(); ctx.moveTo(chart.chartArea.left,y); ctx.lineTo(chart.chartArea.right,y); ctx.stroke();
+        ctx.setLineDash([]); ctx.fillStyle='#e63946'; ctx.font='bold 11px sans-serif';
+        ctx.fillText('Spec limit: 0.375" / 9.53 mm', chart.chartArea.right-190, y-6); ctx.restore();
+      }
+    }]
+  });
+
+  // Tab 1 table
+  const t1body = document.getElementById('tab1Table');
+  sorted1.forEach(d => {
+    const mx = Math.max(d.left,d.right), ex = mx > specLimit;
+    t1body.innerHTML += `<tr><td style="font-weight:600">${d.joint}</td><td>${d.date}</td><td>${d.left.toFixed(3)}</td><td>${(d.left*25.4).toFixed(2)}</td><td class="${ex?'highlight':''}">${d.right.toFixed(3)}</td><td class="${ex?'highlight':''}">${(d.right*25.4).toFixed(2)}</td><td class="${ex?'highlight':''}">${mx.toFixed(3)}</td><td class="${ex?'highlight':''}">${(mx*25.4).toFixed(2)}</td><td>${ex?'<span class="spec-badge">EXCEEDS</span>':'Within'}</td></tr>`;
+  });
+
+  // ─── TAB 2: PPV chart ───
+  const ppvData = [
+    { zone:'Girder Span', mean:(0.6685+1.5506)/2, max:Math.max(2.3670,3.6213) },
+    { zone:'Truss Span', mean:(1.0519+0.8856)/2, max:Math.max(1.8795,1.6496) },
+    { zone:'Side Span', mean:(0.7804+0.6523)/2, max:Math.max(1.5472,1.5692) },
+    { zone:'Main Span', mean:(0.7041+0.8413)/2, max:Math.max(1.2540,2.3984) },
+  ];
+  new Chart(document.getElementById('chart2_ppv'), {
+    type:'bar', data:{ labels:ppvData.map(d=>d.zone), datasets:[
+      {label:'Mean PPV (in/s)',data:ppvData.map(d=>d.mean),backgroundColor:'#7b2cbf',borderRadius:4},
+      {label:'Max PPV (in/s)',data:ppvData.map(d=>d.max),backgroundColor:'#d4b8e8',borderRadius:4},
+    ]}, options:{responsive:true,plugins:{legend:{position:'top',labels:{font:{size:11}}}},scales:{y:{beginAtZero:true,title:{display:true,text:'PPV (in/s)',font:{size:11}}},x:{ticks:{font:{size:11}}}}}
+  });
+
+  // Tab 2 displacement by zone
+  const dz = [{zone:'Girder Span\n(1W16)',right:0.382},{zone:'Truss Span\n(1W4)',right:0.280},{zone:'Side Span\n(1W2)',right:0.309},{zone:'Main Span\n(1E2)',right:0.327}];
+  new Chart(document.getElementById('chart2_disp'), {
+    type:'bar', data:{ labels:dz.map(d=>d.zone), datasets:[
+      {label:'Right Lane (in)',data:dz.map(d=>d.right),backgroundColor:dz.map(d=>d.right>0.375?'#e63946':'#2a6f97'),borderRadius:4}
+    ]}, options:{responsive:true,plugins:{legend:{position:'top',labels:{font:{size:11}}},tooltip:{callbacks:{afterLabel:ctx=>'= '+(ctx.raw*25.4).toFixed(1)+' mm'}}},scales:{
+      y:{beginAtZero:true,max:0.45,title:{display:true,text:'Displacement (in)',font:{size:11}},ticks:{callback:v=>v.toFixed(2)+'"'}},
+      y1:{position:'right',beginAtZero:true,max:0.45*25.4,title:{display:true,text:'mm',font:{size:11}},ticks:{callback:v=>v.toFixed(0)+' mm'},grid:{drawOnChartArea:false}},
+      x:{ticks:{font:{size:10}}}
+    }},
+    plugins:[{id:'sl2',afterDraw(c){const y=c.scales.y.getPixelForValue(0.375),x=c.ctx;x.save();x.setLineDash([5,3]);x.strokeStyle='#e63946';x.lineWidth=1.5;x.beginPath();x.moveTo(c.chartArea.left,y);x.lineTo(c.chartArea.right,y);x.stroke();x.setLineDash([]);x.fillStyle='#e63946';x.font='bold 10px sans-serif';x.fillText('Spec: 0.375"',c.chartArea.right-70,y-5);x.restore();}}]
+  });
+
+  // Tab 2 normalized
+  const zones2=['Girder Span','Truss Span','Side Span','Main Span'];
+  const ppvM=[1.1096,0.9688,0.7164,0.7727], dispM=[0.382,0.280,0.309,0.327];
+  const pMax=Math.max(...ppvM), dMax=Math.max(...dispM);
+  new Chart(document.getElementById('chart2_norm'), {
+    type:'bar', data:{ labels:zones2, datasets:[
+      {label:'Vibration PPV (2022) — normalized %',data:ppvM.map(v=>(v/pMax*100).toFixed(1)),backgroundColor:'#7b2cbf',borderRadius:4},
+      {label:'Joint Displacement (2023) — normalized %',data:dispM.map(v=>(v/dMax*100).toFixed(1)),backgroundColor:'#2a6f97',borderRadius:4},
+    ]}, options:{responsive:true,plugins:{legend:{position:'top',labels:{font:{size:11}}}},scales:{y:{beginAtZero:true,max:110,title:{display:true,text:'% of Maximum',font:{size:11}},ticks:{callback:v=>v+'%'}},x:{ticks:{font:{size:12,weight:'bold'}}}}}
+  });
+
+  // Tab 2 comparison table
+  const cd=[
+    {zone:'Girder Span',typMean:'1.11',typMax:'3.62',closedMean:'1.28',joint:'1W16',right:'0.382',rightMm:'9.70',left:'0.196',match:'high'},
+    {zone:'Truss Span',typMean:'0.97',typMax:'1.88',closedMean:'0.88',joint:'1W4',right:'0.280',rightMm:'7.11',left:'0.090',match:'high'},
+    {zone:'Side Span',typMean:'0.72',typMax:'1.57',closedMean:'0.60',joint:'1W2',right:'0.309',rightMm:'7.85',left:'0.070',match:'med'},
+    {zone:'Main Span',typMean:'0.77',typMax:'2.40',closedMean:'0.45',joint:'1E2',right:'0.327',rightMm:'8.31',left:'0.095',match:'med'},
+  ];
+  const t2b=document.getElementById('tab2CompTable');
+  cd.forEach(d=>{t2b.innerHTML+=`<tr><td style="font-weight:700">${d.zone}</td><td>${d.typMean}</td><td>${d.typMax}</td><td>${d.closedMean}</td><td style="font-weight:600">${d.joint}</td><td>${d.right}</td><td>${d.rightMm}</td><td>${d.left}</td><td>${d.match==='high'?'<span class="badge badge-high">YES &#9733;</span>':'<span class="badge badge-med">YES</span>'}</td></tr>`;});
+
+  // ─── TAB 3: Damage correlation ───
+  const joints=[
+    {no:8,sta:'26+89',struct:'W. Truss',pier:'RJ-1',sev:2,defects:'Some separation, cracking 1" beginning',mat:'RC40-H',ppv:'0.97',disp:'0.28'},
+    {no:9,sta:'28+02',struct:'W. Truss',pier:'RJ-2',sev:2,defects:'Some separation, cracking 1" at steel angle',mat:'RC40-H',ppv:'0.97',disp:'0.28'},
+    {no:11,sta:'30+29',struct:'W. Truss',pier:'RJ-1',sev:3,defects:'Separation ENTIRE joint, major cracking 1"',mat:'RC40-H',ppv:'0.97',disp:'0.28'},
+    {no:12,sta:'31+43',struct:'W. Truss',pier:'RJ-2',sev:2,defects:'Some separation, cracking 1"',mat:'RC40-H',ppv:'0.97',disp:'0.28'},
+    {no:14,sta:'33+68',struct:'W. Truss',pier:'RJ-1',sev:3,defects:'Separation ENTIRE joint, major cracking 1"',mat:'RC40-H',ppv:'0.97',disp:'0.28'},
+    {no:15,sta:'34+83',struct:'W. Truss',pier:'RJ-2',sev:3,defects:'Major cracking along ENTIRE joint 1"',mat:'RC40-H',ppv:'0.97',disp:'0.28'},
+    {no:17,sta:'37+09',struct:'W. Truss',pier:'RJ-1',sev:0,defects:'Surface condition GOOD. Light groove marks only.',mat:'PU PA40 (2020)',ppv:'0.97',disp:'0.28'},
+    {no:18,sta:'38+23',struct:'W. Truss',pier:'RJ-2',sev:3,defects:'Separation ENTIRE joint, cracking 1"',mat:'RC40-H',ppv:'0.97',disp:'0.28'},
+    {no:20,sta:'40+50',struct:'W. Truss',pier:'RJ-1',sev:2,defects:'Some separation, cracking 1"',mat:'RC40-H',ppv:'0.97',disp:'0.28'},
+    {no:21,sta:'41+63',struct:'W. Truss',pier:'RJ-2',sev:2,defects:'Cracking 1" at steel angle',mat:'RC40-H',ppv:'0.97',disp:'0.28'},
+    {no:24,sta:'45+13',struct:'W. Suspended',pier:'PP3',sev:2,defects:'Some separation lane 2, cracking 1"',mat:'RC40-H',ppv:'0.77',disp:'0.33'},
+    {no:25,sta:'46+15',struct:'W. Suspended',pier:'PP7',sev:3,defects:'MAJOR separation+cracking ENTIRE joint',mat:'RC40-H',ppv:'0.77',disp:'0.33'},
+    {no:26,sta:'47+16',struct:'W. Suspended',pier:'PP11',sev:0,defects:'Surface condition GOOD.',mat:'PU PA40 (2020)',ppv:'0.77',disp:'0.33'},
+    {no:27,sta:'48+17',struct:'W. Suspended',pier:'PP15',sev:3,defects:'MAJOR separation ENTIRE joint, cracking 1"',mat:'RC40-H',ppv:'0.77',disp:'0.33'},
+    {no:28,sta:'49+18',struct:'W. Suspended',pier:'PP19',sev:1,defects:'General good, small 12" crack',mat:'RC40-H',ppv:'0.77',disp:'0.33'},
+    {no:29,sta:'50+18',struct:'W. Suspended',pier:'PP23',sev:1,defects:'General good, small 12" crack',mat:'RC40-H',ppv:'0.77',disp:'0.33'},
+    {no:30,sta:'51+22',struct:'W. Suspended',pier:'PP27',sev:2,defects:'Some separation, cracking 1"',mat:'RC40-H',ppv:'0.77',disp:'0.33'},
+    {no:32,sta:'51+93',struct:'W. Suspended',pier:'PP31',sev:2,defects:'Some separation, cracking 1"',mat:'RC40-H',ppv:'0.77',disp:'0.33'},
+    {no:33,sta:'52+47',struct:'W. Suspended',pier:'PP33',sev:2,defects:'Some separation, nail holes, cracking 1"',mat:'RC40-H',ppv:'0.77',disp:'0.33'},
+    {no:34,sta:'53+50',struct:'W. Suspended',pier:'PP37',sev:3,defects:'Separation ENTIRE length, cracking multiple',mat:'RC40-H',ppv:'0.77',disp:'0.33'},
+    {no:35,sta:'54+55',struct:'W. Suspended',pier:'PP41',sev:3,defects:'MAJOR cracking lane 2, some separation',mat:'RC40-H',ppv:'0.77',disp:'0.33'},
+    {no:36,sta:'55+58',struct:'W. Suspended',pier:'PP45',sev:3,defects:'MAJOR separation, cracking 1"',mat:'RC40-H',ppv:'0.77',disp:'0.33'},
+    {no:37,sta:'56+61',struct:'W. Suspended',pier:'PP49',sev:3,defects:'MAJOR separation, MAJOR cracking lane 2',mat:'RC40-H',ppv:'0.77',disp:'0.33'},
+    {no:38,sta:'57+66',struct:'W. Suspended',pier:'PP53',sev:-1,defects:'Plywood nailed — cannot inspect',mat:'RC40-H',ppv:'0.77',disp:'0.33'},
+    {no:39,sta:'58+70',struct:'W. Suspended',pier:'PP57',sev:-1,defects:'Plywood nailed — cannot inspect',mat:'RC40-H',ppv:'0.77',disp:'0.33'},
+    {no:40,sta:'59+73',struct:'W. Suspended',pier:'PP61',sev:-1,defects:'Plywood nailed — cannot inspect',mat:'RC40-H',ppv:'0.77',disp:'0.33'},
+    {no:41,sta:'60+78',struct:'W. Suspended',pier:'PP65',sev:-1,defects:'Plywood nailed, grinded over',mat:'RC40-H',ppv:'0.77',disp:'0.33'},
+    {no:75,sta:'95+49',struct:'E. Truss',pier:'1E4',sev:3,defects:'MAJOR cracking entire joint, separation',mat:'RC105 (2021)',ppv:'0.77',disp:'0.14'},
+  ];
+
+  const t3b=document.getElementById('tab3Heatmap');
+  joints.forEach(j=>{
+    let sc='sev-na',sl='N/A (covered)';
+    if(j.sev===3){sc='sev-3';sl='3 — SEVERE';}else if(j.sev===2){sc='sev-2';sl='2 — MODERATE';}else if(j.sev===1){sc='sev-1';sl='1 — MINOR';}else if(j.sev===0){sc='sev-0';sl='0 — GOOD (PU)';}
+    const ms=j.mat.includes('PU')?'font-weight:700;color:#2d6a4f':'';
+    t3b.innerHTML+=`<tr><td style="font-weight:600">${j.no}${j.mat.includes('PU')?'*':j.mat.includes('RC105')?'**':''}</td><td>${j.sta}</td><td>${j.struct}</td><td>${j.pier}</td><td class="${sc}">${sl}</td><td style="text-align:left;font-size:10px">${j.defects}</td><td style="${ms};font-size:10px">${j.mat}</td><td>${j.ppv}</td><td>${j.disp}</td></tr>`;
+  });
+
+  // Severity by zone
+  const zd=[
+    {zone:'W. Truss Span\n(RC joints only)',avgSev:(2+2+3+2+3+3+3+2+2)/9},
+    {zone:'W. Suspended\n(Near tower PP3-15)',avgSev:(2+3+3)/3},
+    {zone:'W. Suspended\n(Mid-span PP19-33)',avgSev:(1+1+2+2+2)/5},
+    {zone:'W. Suspended\n(Far side PP37-49)',avgSev:(3+3+3+3)/4},
+    {zone:'E. Truss\n(Joint 75)',avgSev:3},
+  ];
+  new Chart(document.getElementById('chart3_sevZone'),{type:'bar',data:{labels:zd.map(d=>d.zone),datasets:[{label:'Avg Damage Score (0-3)',data:zd.map(d=>d.avgSev.toFixed(2)),backgroundColor:zd.map(d=>d.avgSev>=2.5?'#e63946':d.avgSev>=1.5?'#e76f51':'#ffa000'),borderRadius:4}]},options:{responsive:true,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,max:3.5,title:{display:true,text:'Damage Score',font:{size:11}}},x:{ticks:{font:{size:9}}}}}});
+
+  // Suspended span scatter
+  const sj=joints.filter(j=>j.struct==='W. Suspended'&&j.sev>=0);
+  new Chart(document.getElementById('chart3_susp'),{type:'scatter',data:{datasets:[
+    {label:'RC40-H joints',data:sj.filter(j=>!j.mat.includes('PU')).map(j=>({x:parseInt(j.pier.replace('PP','')),y:j.sev})),backgroundColor:sj.filter(j=>!j.mat.includes('PU')).map(j=>j.sev>=3?'#e63946':j.sev>=2?'#e76f51':'#ffa000'),pointRadius:8},
+    {label:'PU Pilot (#26)',data:sj.filter(j=>j.mat.includes('PU')).map(j=>({x:parseInt(j.pier.replace('PP','')),y:j.sev})),backgroundColor:'#2d6a4f',pointRadius:10,pointStyle:'triangle'},
+  ]},options:{responsive:true,plugins:{legend:{position:'top',labels:{font:{size:10}}}},scales:{x:{title:{display:true,text:'Panel Point (PP) — lower = near tower, higher = mid-span',font:{size:10}},min:0,max:70},y:{beginAtZero:true,max:3.5,title:{display:true,text:'Damage Score',font:{size:10}},ticks:{stepSize:1,callback:v=>{const l=['Good','Minor','Moderate','Severe'];return l[v]||''}}}}}});
+
+  // Triple overlay
+  const tz=['W. Truss Span','W. Suspended (tower)','W. Suspended (mid)','W. Suspended (far)','E. Truss'];
+  const tD=[2.44,2.67,1.60,3.00,3.00],tP=[0.97,0.77,0.77,0.77,0.77],tDi=[0.28,0.33,0.33,0.33,0.14];
+  const mD=Math.max(...tD),mP=Math.max(...tP),mDi2=Math.max(...tDi);
+  new Chart(document.getElementById('chart3_triple'),{type:'bar',data:{labels:tz,datasets:[
+    {label:'Damage Severity (normalized %)',data:tD.map(v=>(v/mD*100).toFixed(0)),backgroundColor:'#e63946',borderRadius:4},
+    {label:'Vibration PPV 2022 (normalized %)',data:tP.map(v=>(v/mP*100).toFixed(0)),backgroundColor:'#7b2cbf',borderRadius:4},
+    {label:'Max Displacement 2023 (normalized %)',data:tDi.map(v=>(v/mDi2*100).toFixed(0)),backgroundColor:'#2a6f97',borderRadius:4},
+  ]},options:{responsive:true,plugins:{legend:{position:'top',labels:{font:{size:11}}}},scales:{y:{beginAtZero:true,max:110,title:{display:true,text:'% of Maximum',font:{size:11}},ticks:{callback:v=>v+'%'}},x:{ticks:{font:{size:10}}}}}});
+}
+</script>
+</body>
+</html>
