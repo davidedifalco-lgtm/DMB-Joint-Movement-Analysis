@@ -100,6 +100,12 @@
   .verdict h3{color:#ffab00;font-size:15px;margin-bottom:8px}
   .footer { text-align: center; font-size: 10px; color: #bbb; margin-top: 24px; padding-bottom: 20px; }
   .confidential-bar { background: #e63946; color: #fff; text-align: center; font-size: 11px; font-weight: 600; padding: 6px; letter-spacing: 1px; }
+  .plan-filter { padding: 4px 10px; border-radius: 14px; border: 1px solid #ccc; background: #fff; font-size: 10px; font-weight: 600; cursor: pointer; color: #555; transition: all 0.2s; }
+  .plan-filter:hover { border-color: #58a6ff; color: #1565c0; }
+  .plan-filter.active { background: #1a1a2e; color: #fff; border-color: #1a1a2e; }
+  .jmarker { cursor: pointer; transition: opacity 0.2s; }
+  .jmarker:hover { opacity: 1 !important; filter: brightness(1.2); }
+  .jmarker.dimmed { opacity: 0.15; }
 </style>
 </head>
 <body>
@@ -125,6 +131,7 @@
     <button class="tab-btn active" data-tab="tab1">1. Vertical Displacement</button>
     <button class="tab-btn" data-tab="tab2">2. Vibration vs. Displacement</button>
     <button class="tab-btn" data-tab="tab3">3. Damage Correlation</button>
+    <button class="tab-btn" data-tab="tab4">4. Remediation Plan</button>
   </nav>
 
   <!-- ═══════════════ TAB 1 — VERTICAL DISPLACEMENT ═══════════════ -->
@@ -286,6 +293,162 @@
       — However, challenge this: the PU pilots are only 3 years old (installed 2020). The RC joints are newer (Phase 1, installed during construction). If the PU pilots were performing well at age 3 but the RC joints failed within days/weeks, the comparison still strongly favors PU — but long-term PU durability under these conditions remains unproven.
     </div>
     <div class="footer">Sources: mageba Phase 1 Relief Joint Inspection Report MUS100090 (Oct 30, 2023) | BDI Vibration Report 220403-DE (Aug 2022) | BDI Joint Displacement Reports (Nov-Dec 2023)</div>
+  </div>
+
+  <!-- ═══════════════ TAB 4 — REMEDIATION PLAN ═══════════════ -->
+  <div id="tab4" class="tab-panel">
+    <div class="header">
+      <h1>Interactive Bridge Plan — DMB-22-02 Deck Joint Replacement</h1>
+      <h2>Contract DMB-22-02 | Structure 1 | WSP / DRBA | Nov 2025 Planset overlaid with BDI Data + Inspection Findings</h2>
+    </div>
+
+    <!-- Filter controls -->
+    <div style="max-width:1150px;margin:0 auto 12px;display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:center">
+      <label style="font-size:11px;font-weight:600;color:#444">Filter:</label>
+      <button class="plan-filter active" data-filter="all">All Joints</button>
+      <button class="plan-filter" data-filter="ej">Expansion Joints (EJ)</button>
+      <button class="plan-filter" data-filter="rj">Relief Joints (RJ)</button>
+      <button class="plan-filter" data-filter="severe">Severe Damage Only</button>
+      <button class="plan-filter" data-filter="exceeds">Exceeds Spec</button>
+      <label style="font-size:11px;font-weight:600;color:#444;margin-left:12px">Color by:</label>
+      <select id="colorMode" style="padding:4px 8px;border-radius:6px;border:1px solid #ccc;font-size:11px">
+        <option value="damage">Damage Severity</option>
+        <option value="displacement">Displacement</option>
+        <option value="proposed">Proposed Joint Type</option>
+      </select>
+    </div>
+
+    <!-- SVG Bridge Plan -->
+    <div class="section" style="overflow-x:auto;padding:12px">
+      <div style="min-width:1100px;position:relative" id="bridgePlanContainer">
+        <svg id="bridgePlan" viewBox="0 0 1100 340" style="width:100%;height:auto;font-family:'Segoe UI',system-ui,sans-serif">
+          <!-- Zone backgrounds -->
+          <rect x="20" y="40" width="140" height="90" rx="4" fill="#e8f5e9" stroke="#a5d6a7" stroke-width="0.5"/>
+          <rect x="160" y="40" width="200" height="90" rx="4" fill="#e3f2fd" stroke="#90caf9" stroke-width="0.5"/>
+          <rect x="360" y="40" width="160" height="90" rx="4" fill="#fce4ec" stroke="#ef9a9a" stroke-width="0.5"/>
+          <rect x="520" y="15" width="30" height="120" rx="2" fill="#455a64" opacity="0.3"/>
+          <rect x="550" y="40" width="320" height="90" rx="4" fill="#fff3e0" stroke="#ffcc80" stroke-width="0.5"/>
+          <rect x="870" y="15" width="30" height="120" rx="2" fill="#455a64" opacity="0.3"/>
+          <rect x="900" y="40" width="80" height="90" rx="4" fill="#fce4ec" stroke="#ef9a9a" stroke-width="0.5"/>
+          <rect x="980" y="40" width="100" height="90" rx="4" fill="#e3f2fd" stroke="#90caf9" stroke-width="0.5"/>
+
+          <!-- Zone labels -->
+          <text x="90" y="30" text-anchor="middle" font-size="9" font-weight="700" fill="#2d6a4f">W. ANCHORAGE</text>
+          <text x="260" y="30" text-anchor="middle" font-size="9" font-weight="700" fill="#1565c0">W. GIRDER SPANS</text>
+          <text x="440" y="30" text-anchor="middle" font-size="9" font-weight="700" fill="#c62828">W. TRUSS SPANS</text>
+          <text x="535" y="12" text-anchor="middle" font-size="7" font-weight="700" fill="#fff">W.TOWER</text>
+          <text x="710" y="30" text-anchor="middle" font-size="9" font-weight="700" fill="#e65100">SUSPENDED SPANS</text>
+          <text x="885" y="12" text-anchor="middle" font-size="7" font-weight="700" fill="#fff">E.TOWER</text>
+          <text x="940" y="30" text-anchor="middle" font-size="9" font-weight="700" fill="#c62828">E. TRUSS</text>
+          <text x="1030" y="30" text-anchor="middle" font-size="9" font-weight="700" fill="#1565c0">E. GIRDER</text>
+
+          <!-- Bridge deck line -->
+          <line x1="20" y1="85" x2="1080" y2="85" stroke="#37474f" stroke-width="2"/>
+
+          <!-- Suspension cables (simplified) -->
+          <path d="M535,20 Q600,60 710,70 Q820,60 885,20" fill="none" stroke="#78909c" stroke-width="1" stroke-dasharray="3,2"/>
+
+          <!-- Lane labels -->
+          <text x="8" y="68" font-size="7" fill="#888" transform="rotate(-90,8,68)">L3-4</text>
+          <text x="8" y="103" font-size="7" fill="#888" transform="rotate(-90,8,103)">L1-2</text>
+          <line x1="15" y1="85" x2="1085" y2="85" stroke="#90a4ae" stroke-width="0.5" stroke-dasharray="2,2"/>
+
+          <!-- Joint markers will be placed by JS -->
+          <g id="ejMarkers"></g>
+          <g id="rjMarkers"></g>
+
+          <!-- Displacement bar chart overlay at bottom -->
+          <g id="dispBars" transform="translate(0,170)">
+            <text x="10" y="0" font-size="8" font-weight="600" fill="#1a1a2e">Vertical Displacement (Right Lane)</text>
+            <line x1="20" y1="8" x2="1080" y2="8" stroke="#ccc" stroke-width="0.5"/>
+            <line x1="20" y1="8" x2="20" y2="108" stroke="#ccc" stroke-width="0.5"/>
+            <!-- Spec limit line -->
+            <line x1="20" y1="83" x2="1080" y2="83" stroke="#e63946" stroke-width="0.8" stroke-dasharray="4,2"/>
+            <text x="1082" y="86" font-size="6" fill="#e63946">0.375"</text>
+            <!-- Gridlines -->
+            <line x1="20" y1="33" x2="1080" y2="33" stroke="#eee" stroke-width="0.3"/>
+            <line x1="20" y1="58" x2="1080" y2="58" stroke="#eee" stroke-width="0.3"/>
+            <text x="16" y="12" font-size="6" fill="#888" text-anchor="end">0"</text>
+            <text x="16" y="37" font-size="6" fill="#888" text-anchor="end">0.1"</text>
+            <text x="16" y="62" font-size="6" fill="#888" text-anchor="end">0.2"</text>
+            <text x="16" y="87" font-size="6" fill="#888" text-anchor="end">0.3"</text>
+            <text x="16" y="112" font-size="6" fill="#888" text-anchor="end">0.4"</text>
+          </g>
+        </svg>
+
+        <!-- Tooltip -->
+        <div id="planTooltip" style="display:none;position:absolute;background:#1a1a2e;color:#fff;border-radius:8px;padding:12px 16px;font-size:11px;line-height:1.6;box-shadow:0 4px 20px rgba(0,0,0,0.3);z-index:50;max-width:340px;pointer-events:none"></div>
+      </div>
+    </div>
+
+    <!-- Legend -->
+    <div class="section" style="padding:12px">
+      <div style="display:flex;flex-wrap:wrap;gap:16px;justify-content:center;align-items:flex-start">
+        <div>
+          <div style="font-size:10px;font-weight:700;margin-bottom:4px">DAMAGE SEVERITY</div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <span style="display:flex;align-items:center;gap:3px;font-size:10px"><span style="width:12px;height:12px;border-radius:50%;background:#e63946;display:inline-block"></span>3 Severe</span>
+            <span style="display:flex;align-items:center;gap:3px;font-size:10px"><span style="width:12px;height:12px;border-radius:50%;background:#e76f51;display:inline-block"></span>2 Moderate</span>
+            <span style="display:flex;align-items:center;gap:3px;font-size:10px"><span style="width:12px;height:12px;border-radius:50%;background:#ffa000;display:inline-block"></span>1 Minor</span>
+            <span style="display:flex;align-items:center;gap:3px;font-size:10px"><span style="width:12px;height:12px;border-radius:50%;background:#2d6a4f;display:inline-block"></span>0 Good (PU)</span>
+            <span style="display:flex;align-items:center;gap:3px;font-size:10px"><span style="width:12px;height:12px;border-radius:50%;background:#9e9e9e;display:inline-block"></span>N/A</span>
+          </div>
+        </div>
+        <div>
+          <div style="font-size:10px;font-weight:700;margin-bottom:4px">JOINT TYPE (SHAPE)</div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <span style="font-size:10px">&#9650; Expansion Joint (EJ)</span>
+            <span style="font-size:10px">&#9679; Relief Joint (RJ)</span>
+          </div>
+        </div>
+        <div>
+          <div style="font-size:10px;font-weight:700;margin-bottom:4px">PROPOSED REPLACEMENT (DMB-22-02)</div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <span style="display:flex;align-items:center;gap:3px;font-size:10px"><span style="width:12px;height:12px;border-radius:2px;background:#1565c0;display:inline-block"></span>Maurer XW1</span>
+            <span style="display:flex;align-items:center;gap:3px;font-size:10px"><span style="width:12px;height:12px;border-radius:2px;background:#7b2cbf;display:inline-block"></span>HEWA Plug</span>
+            <span style="display:flex;align-items:center;gap:3px;font-size:10px"><span style="width:12px;height:12px;border-radius:2px;background:#e65100;display:inline-block"></span>Trad. Seal</span>
+            <span style="display:flex;align-items:center;gap:3px;font-size:10px"><span style="width:12px;height:12px;border-radius:2px;background:#00838f;display:inline-block"></span>PPC/SA</span>
+            <span style="display:flex;align-items:center;gap:3px;font-size:10px"><span style="width:12px;height:12px;border-radius:2px;background:#2d6a4f;display:inline-block"></span>PU (Remain)</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Summary table -->
+    <div class="section">
+      <div class="stitle">Remediation Summary — All Joints with Overlay Data</div>
+      <div class="ssub">Click column headers to sort. Green rows = PU pilot joints (remain in place). Data from: BDI Displacement (2023), mageba Inspection (2023), WSP Planset DMB-22-02 (Nov 2025).</div>
+      <div style="overflow-x:auto">
+      <table id="tab4Table">
+        <thead>
+          <tr>
+            <th style="cursor:pointer" onclick="sortTab4('id')">ID</th>
+            <th style="cursor:pointer" onclick="sortTab4('type')">Type</th>
+            <th style="cursor:pointer" onclick="sortTab4('location')">Location</th>
+            <th style="cursor:pointer" onclick="sortTab4('zone')">Zone</th>
+            <th style="cursor:pointer" onclick="sortTab4('dispR')">Disp. R (in)</th>
+            <th style="cursor:pointer" onclick="sortTab4('dispL')">Disp. L (in)</th>
+            <th style="cursor:pointer" onclick="sortTab4('damage')">Damage</th>
+            <th>Existing Material</th>
+            <th style="cursor:pointer" onclick="sortTab4('proposed')">Proposed (DMB-22-02)</th>
+            <th>Phase</th>
+            <th>PPV (in/s)</th>
+          </tr>
+        </thead>
+        <tbody id="tab4Body"></tbody>
+      </table>
+      </div>
+    </div>
+
+    <div class="callout">
+      <strong>Key observations from the remediation planset overlay:</strong><br>
+      — <strong>Expected service movement per WSP: 1.00" for both truss and suspended spans</strong> — this is a significant increase from the original spec assumption of a single +/- 3/8" movement over lifespan.<br>
+      — Relief joint schedule: 33 HEWA Plug + 22 Traditional Seal (Spring Phase), 22 Traditional Seal only (Fall Phase). Existing PU and HEMA H150 joints are to REMAIN — validating that these materials perform.<br>
+      — All expansion joints replaced with Maurer XW1 Strip Seal — a proven dynamic joint system designed for continuous cycling.<br>
+      — The planset confirms DRBA/WSP now acknowledge the dynamic loading environment that mageba identified in 2022-2023. The entire remediation scope reflects a bridge that moves continuously under traffic, not the "one-time" movement the original spec assumed.
+    </div>
+
+    <div class="footer">Sources: WSP Planset DMB-22-02 (Nov 2025) | BDI Joint Displacement Reports (Nov-Dec 2023) | mageba Phase 1 Relief Joint Inspection (Oct 2023) | BDI Vibration Report (Aug 2022)</div>
   </div>
 
   <div class="confidential-bar">CONFIDENTIAL — CONTRACT BRC231F — DO NOT DISTRIBUTE</div>
@@ -502,6 +665,300 @@ function initCharts() {
     {label:'Vibration PPV 2022 (normalized %)',data:tP.map(v=>(v/mP*100).toFixed(0)),backgroundColor:'#7b2cbf',borderRadius:4},
     {label:'Max Displacement 2023 (normalized %)',data:tDi.map(v=>(v/mDi2*100).toFixed(0)),backgroundColor:'#2a6f97',borderRadius:4},
   ]},options:{responsive:true,plugins:{legend:{position:'top',labels:{font:{size:11}}}},scales:{y:{beginAtZero:true,max:110,title:{display:true,text:'% of Maximum',font:{size:11}},ticks:{callback:v=>v+'%'}},x:{ticks:{font:{size:10}}}}}});
+
+  // ─── TAB 4: Interactive Bridge Plan ───
+  initBridgePlan();
+}
+
+/* ═══════════════ TAB 4 — BRIDGE PLAN ═══════════════ */
+const allJoints = [
+  // Expansion Joints (EJ) — from BDI displacement + plans
+  {id:'W.Abut',type:'ej',loc:'W. Abutment',zone:'Anchorage',x:30,dispR:0.101,dispL:0.074,damage:-2,mat:'PPC/SA-CC',proposed:'Maurer XW1',phase:'Spring+Fall',ppv:0.72},
+  {id:'1W22',type:'ej',loc:'Pier 1W22',zone:'Girder',x:165,dispR:0.289,dispL:0.128,damage:-2,mat:'PPC',proposed:'Maurer XW1',phase:'Spring+Fall',ppv:1.11},
+  {id:'1W19',type:'ej',loc:'Pier 1W19',zone:'Girder',x:200,dispR:0.298,dispL:0.127,damage:-2,mat:'PPC',proposed:'Maurer XW1',phase:'Spring+Fall',ppv:1.11},
+  {id:'1W16',type:'ej',loc:'Pier 1W16',zone:'Girder',x:235,dispR:0.382,dispL:0.196,damage:-2,mat:'PPC',proposed:'Maurer XW1',phase:'Spring+Fall',ppv:1.11},
+  {id:'1W13',type:'ej',loc:'Pier 1W13',zone:'Girder',x:270,dispR:0.284,dispL:0.080,damage:-2,mat:'PPC',proposed:'Maurer XW1',phase:'Spring+Fall',ppv:1.11},
+  {id:'1W5',type:'ej',loc:'Pier 1W5',zone:'Truss',x:370,dispR:0.250,dispL:0.130,damage:-2,mat:'SA-CU',proposed:'Maurer XW1',phase:'Spring+Fall',ppv:0.97},
+  {id:'1W4',type:'ej',loc:'Pier 1W4',zone:'Truss',x:400,dispR:0.280,dispL:0.090,damage:-2,mat:'PPC',proposed:'Maurer XW1',phase:'Spring+Fall',ppv:0.97},
+  {id:'1W3',type:'ej',loc:'Pier 1W3',zone:'Side',x:70,dispR:0.285,dispL:0.080,damage:-2,mat:'SA-CC',proposed:'Maurer XW1',phase:'Spring+Fall',ppv:0.72},
+  {id:'1W2',type:'ej',loc:'Pier 1W2',zone:'Side',x:100,dispR:0.309,dispL:0.070,damage:-2,mat:'SA-CC',proposed:'Maurer XW1',phase:'Spring+Fall',ppv:0.72},
+  {id:'1W1',type:'ej',loc:'Pier 1W1',zone:'Side',x:130,dispR:0.133,dispL:0.098,damage:-2,mat:'SA-CU',proposed:'Maurer XW1',phase:'Spring+Fall',ppv:0.72},
+  {id:'1E1',type:'ej',loc:'Pier 1E1',zone:'Truss E',x:910,dispR:0.139,dispL:0.085,damage:-2,mat:'SA-CU',proposed:'Maurer XW1',phase:'Spring+Fall',ppv:0.77},
+  {id:'1E2',type:'ej',loc:'Pier 1E2',zone:'Truss E',x:940,dispR:0.327,dispL:0.095,damage:-2,mat:'PPC',proposed:'Maurer XW1',phase:'Spring+Fall',ppv:0.77},
+  {id:'1E3',type:'ej',loc:'Pier 1E3',zone:'Girder E',x:990,dispR:0.305,dispL:0.083,damage:-2,mat:'PPC',proposed:'Maurer XW1',phase:'Spring+Fall',ppv:0.77},
+  {id:'1E4',type:'ej',loc:'Pier 1E4',zone:'Girder E',x:1010,dispR:0.141,dispL:0.082,damage:-2,mat:'SA-CC',proposed:'Maurer XW1',phase:'Spring+Fall',ppv:0.77},
+  {id:'1E5',type:'ej',loc:'Pier 1E5',zone:'Girder E',x:1030,dispR:0.201,dispL:0.050,damage:-2,mat:'PPC',proposed:'Maurer XW1',phase:'Spring+Fall',ppv:0.77},
+  {id:'1E12',type:'ej',loc:'Pier 1E12',zone:'Girder E',x:1050,dispR:0.191,dispL:0.056,damage:-2,mat:'SA-CC',proposed:'Maurer XW1',phase:'Spring+Fall',ppv:0.77},
+  {id:'1E15',type:'ej',loc:'Pier 1E15',zone:'Girder E',x:1065,dispR:0.136,dispL:0.095,damage:-2,mat:'PPC',proposed:'Maurer XW1',phase:'Spring+Fall',ppv:0.77},
+  {id:'E.Abut',type:'ej',loc:'E. Abutment',zone:'Anchorage E',x:1080,dispR:0.195,dispL:0.075,damage:-2,mat:'SA-CC',proposed:'Maurer XW1',phase:'Spring+Fall',ppv:0.77},
+  // Relief Joints (RJ) — from mageba inspection + plans
+  {id:'RJ-8',type:'rj',loc:'Sta 26+89',zone:'W. Truss',x:380,dispR:0.28,dispL:null,damage:2,mat:'RC40-H',proposed:'HEWA Plug',phase:'Spring',ppv:0.97,defects:'Some separation, cracking'},
+  {id:'RJ-9',type:'rj',loc:'Sta 28+02',zone:'W. Truss',x:386,dispR:0.28,dispL:null,damage:2,mat:'RC40-H',proposed:'Trad. Seal',phase:'Spring',ppv:0.97,defects:'Some separation, cracking'},
+  {id:'RJ-11',type:'rj',loc:'Sta 30+29',zone:'W. Truss',x:392,dispR:0.28,dispL:null,damage:3,mat:'RC40-H',proposed:'HEWA Plug',phase:'Spring',ppv:0.97,defects:'Separation ENTIRE joint'},
+  {id:'RJ-12',type:'rj',loc:'Sta 31+43',zone:'W. Truss',x:398,dispR:0.28,dispL:null,damage:2,mat:'RC40-H',proposed:'Trad. Seal',phase:'Spring',ppv:0.97,defects:'Some separation, cracking'},
+  {id:'RJ-14',type:'rj',loc:'Sta 33+68',zone:'W. Truss',x:410,dispR:0.28,dispL:null,damage:3,mat:'RC40-H',proposed:'HEWA Plug',phase:'Spring',ppv:0.97,defects:'Separation ENTIRE joint'},
+  {id:'RJ-15',type:'rj',loc:'Sta 34+83',zone:'W. Truss',x:416,dispR:0.28,dispL:null,damage:3,mat:'RC40-H',proposed:'Trad. Seal',phase:'Spring',ppv:0.97,defects:'Major cracking ENTIRE joint'},
+  {id:'RJ-17',type:'rj',loc:'Sta 37+09',zone:'W. Truss',x:430,dispR:0.28,dispL:null,damage:0,mat:'PU PA40 (2020)',proposed:'REMAIN (PU)',phase:'N/A',ppv:0.97,defects:'GOOD — light groove marks only'},
+  {id:'RJ-18',type:'rj',loc:'Sta 38+23',zone:'W. Truss',x:436,dispR:0.28,dispL:null,damage:3,mat:'RC40-H',proposed:'HEWA Plug',phase:'Spring',ppv:0.97,defects:'Separation ENTIRE joint'},
+  {id:'RJ-20',type:'rj',loc:'Sta 40+50',zone:'W. Truss',x:448,dispR:0.28,dispL:null,damage:2,mat:'RC40-H',proposed:'HEWA Plug',phase:'Spring',ppv:0.97,defects:'Some separation, cracking'},
+  {id:'RJ-21',type:'rj',loc:'Sta 41+63',zone:'W. Truss',x:454,dispR:0.28,dispL:null,damage:2,mat:'RC40-H',proposed:'Trad. Seal',phase:'Spring',ppv:0.97,defects:'Cracking at steel angle'},
+  {id:'RJ-24',type:'rj',loc:'PP3',zone:'Suspended',x:565,dispR:0.33,dispL:null,damage:2,mat:'RC40-H',proposed:'Trad. Seal',phase:'Spring',ppv:0.77,defects:'Some separation lane 2'},
+  {id:'RJ-25',type:'rj',loc:'PP7',zone:'Suspended',x:585,dispR:0.33,dispL:null,damage:3,mat:'RC40-H',proposed:'HEWA Plug',phase:'Spring',ppv:0.77,defects:'MAJOR separation ENTIRE joint'},
+  {id:'RJ-26',type:'rj',loc:'PP11',zone:'Suspended',x:605,dispR:0.33,dispL:null,damage:0,mat:'PU PA40 (2020)',proposed:'REMAIN (PU)',phase:'N/A',ppv:0.77,defects:'GOOD'},
+  {id:'RJ-27',type:'rj',loc:'PP15',zone:'Suspended',x:625,dispR:0.33,dispL:null,damage:3,mat:'RC40-H',proposed:'HEWA Plug',phase:'Spring',ppv:0.77,defects:'MAJOR separation ENTIRE joint'},
+  {id:'RJ-28',type:'rj',loc:'PP19',zone:'Suspended',x:645,dispR:0.33,dispL:null,damage:1,mat:'RC40-H',proposed:'Trad. Seal',phase:'Spring',ppv:0.77,defects:'Small 12" crack'},
+  {id:'RJ-29',type:'rj',loc:'PP23',zone:'Suspended',x:665,dispR:0.33,dispL:null,damage:1,mat:'RC40-H',proposed:'HEWA Plug',phase:'Spring',ppv:0.77,defects:'Small 12" crack'},
+  {id:'RJ-30',type:'rj',loc:'PP27',zone:'Suspended',x:685,dispR:0.33,dispL:null,damage:2,mat:'RC40-H',proposed:'Trad. Seal',phase:'Spring',ppv:0.77,defects:'Some separation, cracking'},
+  {id:'RJ-32',type:'rj',loc:'PP31',zone:'Suspended',x:705,dispR:0.33,dispL:null,damage:2,mat:'RC40-H',proposed:'HEWA Plug',phase:'Spring',ppv:0.77,defects:'Some separation, cracking'},
+  {id:'RJ-33',type:'rj',loc:'PP33',zone:'Suspended',x:715,dispR:0.33,dispL:null,damage:2,mat:'RC40-H',proposed:'Trad. Seal',phase:'Spring',ppv:0.77,defects:'Separation, nail holes'},
+  {id:'RJ-34',type:'rj',loc:'PP37',zone:'Suspended',x:735,dispR:0.33,dispL:null,damage:3,mat:'RC40-H',proposed:'HEWA Plug',phase:'Spring',ppv:0.77,defects:'Separation ENTIRE length'},
+  {id:'RJ-35',type:'rj',loc:'PP41',zone:'Suspended',x:755,dispR:0.33,dispL:null,damage:3,mat:'RC40-H',proposed:'HEWA Plug',phase:'Spring',ppv:0.77,defects:'MAJOR cracking lane 2'},
+  {id:'RJ-36',type:'rj',loc:'PP45',zone:'Suspended',x:775,dispR:0.33,dispL:null,damage:3,mat:'RC40-H',proposed:'Trad. Seal',phase:'Spring',ppv:0.77,defects:'MAJOR separation'},
+  {id:'RJ-37',type:'rj',loc:'PP49',zone:'Suspended',x:795,dispR:0.33,dispL:null,damage:3,mat:'RC40-H',proposed:'HEWA Plug',phase:'Spring',ppv:0.77,defects:'MAJOR separation+cracking'},
+  {id:'RJ-38',type:'rj',loc:'PP53',zone:'Suspended',x:815,dispR:0.33,dispL:null,damage:-1,mat:'RC40-H',proposed:'HEWA Plug',phase:'Spring',ppv:0.77,defects:'Plywood — cannot inspect'},
+  {id:'RJ-39',type:'rj',loc:'PP57',zone:'Suspended',x:825,dispR:0.33,dispL:null,damage:-1,mat:'RC40-H',proposed:'Trad. Seal',phase:'Spring',ppv:0.77,defects:'Plywood — cannot inspect'},
+  {id:'RJ-40',type:'rj',loc:'PP61',zone:'Suspended',x:840,dispR:0.33,dispL:null,damage:-1,mat:'RC40-H',proposed:'HEWA Plug',phase:'Spring',ppv:0.77,defects:'Plywood — cannot inspect'},
+  {id:'RJ-41',type:'rj',loc:'PP65',zone:'Suspended',x:855,dispR:0.33,dispL:null,damage:-1,mat:'RC40-H',proposed:'Trad. Seal',phase:'Spring',ppv:0.77,defects:'Plywood — cannot inspect'},
+  {id:'RJ-75',type:'rj',loc:'Pier 1E4',zone:'E. Truss',x:920,dispR:0.14,dispL:null,damage:3,mat:'RC105 (2021)',proposed:'Trad. Seal',phase:'Fall',ppv:0.77,defects:'MAJOR cracking entire joint'},
+];
+
+function getDamageColor(d) {
+  if(d===3) return '#e63946';
+  if(d===2) return '#e76f51';
+  if(d===1) return '#ffa000';
+  if(d===0) return '#2d6a4f';
+  return '#9e9e9e';
+}
+function getDispColor(v) {
+  if(v>=0.375) return '#e63946';
+  if(v>=0.25) return '#e76f51';
+  if(v>=0.15) return '#ffa000';
+  return '#2a6f97';
+}
+function getProposedColor(p) {
+  if(p.includes('Maurer')) return '#1565c0';
+  if(p.includes('HEWA')) return '#7b2cbf';
+  if(p.includes('Trad')) return '#e65100';
+  if(p.includes('REMAIN')) return '#2d6a4f';
+  return '#00838f';
+}
+function getColor(j, mode) {
+  if(mode==='displacement') return getDispColor(j.dispR);
+  if(mode==='proposed') return getProposedColor(j.proposed);
+  return getDamageColor(j.damage);
+}
+
+let currentFilter = 'all';
+let currentColorMode = 'damage';
+let tab4SortKey = null;
+let tab4SortAsc = true;
+
+function initBridgePlan() {
+  renderPlanMarkers();
+  renderDispBars();
+  renderTab4Table();
+
+  // Filter buttons
+  document.querySelectorAll('.plan-filter').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.plan-filter').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      currentFilter = btn.dataset.filter;
+      renderPlanMarkers();
+      renderTab4Table();
+    });
+  });
+  // Color mode
+  document.getElementById('colorMode').addEventListener('change', e => {
+    currentColorMode = e.target.value;
+    renderPlanMarkers();
+    renderDispBars();
+  });
+}
+
+function isVisible(j) {
+  if(currentFilter==='all') return true;
+  if(currentFilter==='ej') return j.type==='ej';
+  if(currentFilter==='rj') return j.type==='rj';
+  if(currentFilter==='severe') return j.damage===3;
+  if(currentFilter==='exceeds') return j.dispR>=0.375;
+  return true;
+}
+
+function renderPlanMarkers() {
+  const svg = document.getElementById('bridgePlan');
+  const ns = 'http://www.w3.org/2000/svg';
+  // Clear
+  document.getElementById('ejMarkers').innerHTML = '';
+  document.getElementById('rjMarkers').innerHTML = '';
+
+  allJoints.forEach((j,i) => {
+    const vis = isVisible(j);
+    const color = getColor(j, currentColorMode);
+    const g = document.createElementNS(ns, 'g');
+    g.setAttribute('class', 'jmarker' + (vis ? '' : ' dimmed'));
+    g.setAttribute('data-idx', i);
+
+    const yTop = j.type==='ej' ? 55 : 70;
+    const yBot = j.type==='ej' ? 55 : 100;
+
+    if(j.type==='ej') {
+      // Triangle for EJ
+      const poly = document.createElementNS(ns, 'polygon');
+      poly.setAttribute('points', `${j.x},${yTop-10} ${j.x-6},${yTop+4} ${j.x+6},${yTop+4}`);
+      poly.setAttribute('fill', color);
+      poly.setAttribute('stroke', '#fff');
+      poly.setAttribute('stroke-width', '0.8');
+      g.appendChild(poly);
+      // Vertical line through deck
+      const ln = document.createElementNS(ns, 'line');
+      ln.setAttribute('x1', j.x); ln.setAttribute('y1', '45');
+      ln.setAttribute('x2', j.x); ln.setAttribute('y2', '125');
+      ln.setAttribute('stroke', color); ln.setAttribute('stroke-width', '1');
+      ln.setAttribute('stroke-dasharray', '2,2'); ln.setAttribute('opacity', '0.5');
+      g.appendChild(ln);
+    } else {
+      // Circle for RJ — two rows (lanes 3-4 top, lanes 1-2 bottom)
+      const c1 = document.createElementNS(ns, 'circle');
+      c1.setAttribute('cx', j.x); c1.setAttribute('cy', '70');
+      c1.setAttribute('r', '4'); c1.setAttribute('fill', color);
+      c1.setAttribute('stroke', '#fff'); c1.setAttribute('stroke-width', '0.6');
+      g.appendChild(c1);
+      const c2 = document.createElementNS(ns, 'circle');
+      c2.setAttribute('cx', j.x); c2.setAttribute('cy', '100');
+      c2.setAttribute('r', '4'); c2.setAttribute('fill', color);
+      c2.setAttribute('stroke', '#fff'); c2.setAttribute('stroke-width', '0.6');
+      g.appendChild(c2);
+    }
+
+    // Label
+    const txt = document.createElementNS(ns, 'text');
+    txt.setAttribute('x', j.x); txt.setAttribute('y', j.type==='ej' ? 138 : 118);
+    txt.setAttribute('text-anchor', 'middle'); txt.setAttribute('font-size', '6');
+    txt.setAttribute('fill', '#555'); txt.setAttribute('transform', `rotate(-60,${j.x},${j.type==='ej'?138:118})`);
+    txt.textContent = j.id.replace('RJ-','#');
+    g.appendChild(txt);
+
+    // Tooltip events
+    g.addEventListener('mouseenter', e => showPlanTooltip(e, j));
+    g.addEventListener('mouseleave', hidePlanTooltip);
+
+    const parent = j.type==='ej' ? 'ejMarkers' : 'rjMarkers';
+    document.getElementById(parent).appendChild(g);
+  });
+}
+
+function renderDispBars() {
+  const g = document.getElementById('dispBars');
+  // Remove old bars (keep first 8 children = labels+lines)
+  while(g.children.length > 8) g.removeChild(g.lastChild);
+
+  const ns = 'http://www.w3.org/2000/svg';
+  const maxH = 100; // pixels for 0.4"
+  const scale = maxH / 0.4;
+
+  allJoints.filter(j => j.type==='ej').forEach(j => {
+    const h = j.dispR * scale;
+    const rect = document.createElementNS(ns, 'rect');
+    rect.setAttribute('x', j.x - 4); rect.setAttribute('y', 8);
+    rect.setAttribute('width', '8'); rect.setAttribute('height', h);
+    rect.setAttribute('rx', '1');
+    rect.setAttribute('fill', getColor(j, currentColorMode));
+    rect.setAttribute('opacity', '0.8');
+    g.appendChild(rect);
+
+    const lbl = document.createElementNS(ns, 'text');
+    lbl.setAttribute('x', j.x); lbl.setAttribute('y', 8 + h + 8);
+    lbl.setAttribute('text-anchor', 'middle'); lbl.setAttribute('font-size', '5.5');
+    lbl.setAttribute('fill', '#555');
+    lbl.textContent = j.id;
+    g.appendChild(lbl);
+  });
+}
+
+function showPlanTooltip(e, j) {
+  const tip = document.getElementById('planTooltip');
+  const tipSevMap = {'3':'SEVERE','2':'MODERATE','1':'MINOR','0':'GOOD (PU)','-1':'N/A (covered)','-2':'N/A (EJ)'};
+  const sevColor = getDamageColor(j.damage);
+
+  let html = `<div style="font-weight:700;font-size:13px;margin-bottom:4px;color:#58a6ff">${j.id} — ${j.loc}</div>`;
+  html += `<div style="color:#8b949e;font-size:10px;margin-bottom:6px">${j.zone} | ${j.type==='ej'?'Expansion Joint':'Relief Joint'}</div>`;
+  html += `<table style="width:100%;font-size:10px;border-collapse:collapse">`;
+  html += `<tr><td style="padding:2px 0;color:#8b949e">Displacement (R)</td><td style="padding:2px 0;text-align:right;font-weight:600;color:${j.dispR>=0.375?'#f85149':'#7ee787'}">${j.dispR.toFixed(3)}" / ${(j.dispR*25.4).toFixed(1)} mm${j.dispR>=0.375?' ⚠':''}</td></tr>`;
+  if(j.dispL!==null) html += `<tr><td style="padding:2px 0;color:#8b949e">Displacement (L)</td><td style="padding:2px 0;text-align:right">${j.dispL.toFixed(3)}" / ${(j.dispL*25.4).toFixed(1)} mm</td></tr>`;
+  html += `<tr><td style="padding:2px 0;color:#8b949e">Damage Score</td><td style="padding:2px 0;text-align:right;font-weight:600;color:${sevColor}">${tipSevMap[j.damage]||'—'}</td></tr>`;
+  if(j.defects) html += `<tr><td colspan="2" style="padding:2px 0;color:#ffa657;font-size:9px">${j.defects}</td></tr>`;
+  html += `<tr><td style="padding:2px 0;color:#8b949e">Existing</td><td style="padding:2px 0;text-align:right">${j.mat}</td></tr>`;
+  html += `<tr><td style="padding:2px 0;color:#8b949e">PPV (2022)</td><td style="padding:2px 0;text-align:right">${j.ppv} in/s</td></tr>`;
+  html += `<tr><td style="padding:4px 0 0;color:#8b949e;border-top:1px solid #30363d">Proposed (DMB-22-02)</td><td style="padding:4px 0 0;text-align:right;font-weight:700;color:#7ee787;border-top:1px solid #30363d">${j.proposed}</td></tr>`;
+  html += `<tr><td style="padding:2px 0;color:#8b949e">Construction Phase</td><td style="padding:2px 0;text-align:right">${j.phase}</td></tr>`;
+  html += `</table>`;
+
+  tip.innerHTML = html;
+  tip.style.display = 'block';
+
+  const container = document.getElementById('bridgePlanContainer');
+  const rect = container.getBoundingClientRect();
+  const svgEl = document.getElementById('bridgePlan');
+  const svgRect = svgEl.getBoundingClientRect();
+  const scaleX = svgRect.width / 1100;
+  const px = j.x * scaleX + svgRect.left - rect.left;
+  const py = 50 * (svgRect.height/340) + svgRect.top - rect.top;
+
+  tip.style.left = Math.min(px, rect.width - 350) + 'px';
+  tip.style.top = (py - tip.offsetHeight - 10) + 'px';
+}
+
+function hidePlanTooltip() {
+  document.getElementById('planTooltip').style.display = 'none';
+}
+
+function renderTab4Table() {
+  let data = allJoints.filter(isVisible);
+  if(tab4SortKey) {
+    data.sort((a,b) => {
+      let va, vb;
+      if(tab4SortKey==='id'){va=a.id;vb=b.id;}
+      else if(tab4SortKey==='type'){va=a.type;vb=b.type;}
+      else if(tab4SortKey==='location'){va=a.loc;vb=b.loc;}
+      else if(tab4SortKey==='zone'){va=a.zone;vb=b.zone;}
+      else if(tab4SortKey==='dispR'){va=a.dispR;vb=b.dispR;}
+      else if(tab4SortKey==='dispL'){va=(a.dispL||0);vb=(b.dispL||0);}
+      else if(tab4SortKey==='damage'){va=a.damage;vb=b.damage;}
+      else if(tab4SortKey==='proposed'){va=a.proposed;vb=b.proposed;}
+      else {va=a.id;vb=b.id;}
+      if(typeof va==='string') return tab4SortAsc?va.localeCompare(vb):vb.localeCompare(va);
+      return tab4SortAsc?(va-vb):(vb-va);
+    });
+  }
+
+  const sevMap2 = {3:'SEVERE',2:'MODERATE',1:'MINOR',0:'GOOD (PU)','-1':'N/A','-2':'—'};
+  const body = document.getElementById('tab4Body');
+  body.innerHTML = '';
+  data.forEach(j => {
+    const isPU = j.proposed.includes('REMAIN');
+    const sevClass = j.damage===3?'sev-3':j.damage===2?'sev-2':j.damage===1?'sev-1':j.damage===0?'sev-0':'sev-na';
+    const rowStyle = isPU ? 'background:#e8f5e9' : '';
+    body.innerHTML += `<tr style="${rowStyle}">
+      <td style="font-weight:600">${j.id}</td>
+      <td>${j.type.toUpperCase()}</td>
+      <td>${j.loc}</td>
+      <td>${j.zone}</td>
+      <td style="font-weight:600;color:${j.dispR>=0.375?'#e63946':'inherit'}">${j.dispR.toFixed(3)}"</td>
+      <td>${j.dispL!==null?j.dispL.toFixed(3)+'"':'—'}</td>
+      <td class="${sevClass}">${sevMap2[j.damage]||'—'}</td>
+      <td style="font-size:10px">${j.mat}</td>
+      <td style="font-weight:600;color:${getProposedColor(j.proposed)}">${j.proposed}</td>
+      <td style="font-size:10px">${j.phase}</td>
+      <td>${j.ppv}</td>
+    </tr>`;
+  });
+}
+
+function sortTab4(key) {
+  if(tab4SortKey===key) tab4SortAsc=!tab4SortAsc;
+  else { tab4SortKey=key; tab4SortAsc=true; }
+  renderTab4Table();
 }
 </script>
 </body>
